@@ -1,23 +1,76 @@
 ---
-title: "FinalProject"
+title: "Predictive Modeling of Used Car Prices with Statistical Linear Models"
+subtitle: "Mth 439 Final Project"
 author: "Haris Naveed, Griffin Lovato, Andrew Nahlik, Christian Calian, Jack Weitzner"
 date: "2023-11-19"
 output: pdf_document
 ---
 
 
-## Final Project 
+## Data Cleanup:
 
-```{r cars}
-summary(cars)
+First, we have to load in our data. The head of the data can be seen below:
+Note* You have to edit the file path below to match where you stored the Kaggle file on your computer.
+
+```{r, echo=FALSE}
+raw_data = read.csv("used_cars_UK.csv")
+head(raw_data)
 ```
 
-## Including Plots
+Above, we can see what our raw data table looks like. The first step in cleaning this data is to encode the "Engine" column, currently considered a char, into a numeric variable. We will later revisit whether this categorical to quantitative encoding is valid. As we are focusing on continuous variables for this project, we will remove columns: "title", "Fuel.type", "Gearbox", "Emission Class", and "Service.history". The categorical variable "Body.type" will remain in our data set as a useful variable for stratification. We can also rename the columns to have a standardized form. Finally, we can remove any rows with NA values.
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r, echo=FALSE}
+data = raw_data[, c("Price", "Mileage.miles.", "Registration_Year", "Previous.Owners", "Body.type", "Engine", "Doors", "Seats")]
+data$Engine = as.numeric(gsub("L", "", raw_data$Engine))
+colnames(data)[colnames(data) == "Mileage.miles."] = "Mileage"
+colnames(data)[colnames(data) == "Previous.Owners"] = "Previous_Owners"
+colnames(data)[colnames(data) == "Body.type"] = "Body_Type"
+data = na.omit(data)
+head(data)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Initial Data Analysis:
+
+### Quick Summary:
+
+A quick way to investigate the properties of our data set is to use the summary function:
+
+```{r, echo=FALSE}
+summary(data)
+```
+
+--- Comments about above summary ---
+
+### Analysis of Histograms of Variables:
+
+Additionally, we can investigate the histograms of each of our variables:
+
+```{r, echo=FALSE}
+par(mfrow = c(2, 2)) 
+for (col in names(data)) {
+  if (is.numeric(data[[col]])) {
+    hist(data[[col]], main = paste("Histogram of", col), xlab= col)
+  }
+}
+```
+
+--- Comments about above histograms---
+
+### Analysis of Bivariate Plots of Price:
+
+```{r, echo = FALSE}
+columns_to_plot = names(data)[!(names(data) %in% c("Price", "Body_Type"))]
+pairs(data[, columns_to_plot], main = "Bivariate plots: Price vs others")
+```
+
+--- Comments about the above Bivariate plots ---
+
+## Initial Preview of the Full Regression Model
+
+Here we create a full model using all continuous predictors of "Price", the summary of which can be seen below: 
+
+```{r, echo = FALSE}
+full_model = lm(Price~ . - Body_Type, data)
+summary(full_model)
+```
