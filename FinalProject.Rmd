@@ -6,14 +6,12 @@ date: "2023-11-19"
 output: pdf_document
 ---
 
-
 ## Data Cleanup:
 
-First, we have to load in our data. The head of the data can be seen below:
-Note* You have to edit the file path below to match where you stored the Kaggle file on your computer.
+First, we have to load in our data. The head of the data can be seen below: Be sure to download the file to the correct location on your machine or the connection will not open properly.
 
 ```{r, echo=FALSE}
-raw_data = read.csv("used_cars_UK.csv")
+raw_data = read.csv("used_cars_UK.csv", fileEncoding = "UTF-8")
 head(raw_data)
 ```
 
@@ -29,7 +27,6 @@ data = na.omit(data)
 head(data)
 ```
 
-
 ## Initial Data Analysis:
 
 ### Quick Summary:
@@ -41,6 +38,40 @@ summary(data)
 ```
 
 --- Comments about above summary ---
+
+Based on the summary we can establish a few baseline assumptions about the data.
+
+#### Price:
+
+Beginning with price, the spread of the quartiles suggests that most of the vehicles are below \$6000 with the 3rd quartile bieng at \$8491. The maximum value being \$33900 suggests however that we are likely to have outliers in terms of price. This could be explained by luxury or collectible vintage vehicles.
+
+#### Mileage:
+
+The mileage seems like a relatively normal distriution. The median and mean values are approximately 81,000 with the first quartile being approximately 60,000 and the 3rd quartile being around 105000. These are both slightly more than 20,000 from the mean/median which would suggest a good distribution. The minimum value in mileage does give us a hint on price. A minimum value of mileage being 6 suggests that in this dataset there are essentially new cars. In considering building a model these "nearly new" should probably be removed from the model.
+
+#### Registration Year:
+
+Registration year is likely to be biased toward more modern years (right skewed distribution). We see a minimum datapoint in 1987, but 75% of the datapoints are for vehicles in the last 15 years (2009 or newer).
+
+#### Previous Owners:
+
+This is a long tailed distribution. From a practical knowledge perspective it is suprising to see even one vehicle has had 9 previous owners and is now on sale for a tenth time. Either this is a really old vehicle with a lot of miles or there is something wrong with it that makes it undesirable. It is also possible that this is an error in the data.
+
+#### Body Type:
+
+This is a categorical variable which the summarry() function cannot properly view. During later processing we can view this as a histogram and better understand what different categories these vehicles fall into.
+
+#### Engine:
+
+This is the engine displacement (eg. 2L engine). It is curious that the median and mean value for this parameter are 1.6L as this strikes us as somewhat low. That said, this dataset is for cars registered for sale in the UK which often has smaller and somewhat less powerful vehicles compared to the US. The maximum value is likely to be an outlier as a sportscar or something similar.
+
+#### Doors:
+
+This variable is likely somewhat difficult to categorize. A large amount of the vehicles (at least 50%) claim to have 5 doors, however this does not seem possible logically unless the trunk is bieng counted as a 'door'. If this is the case 5 door vehicles should likely be relabeled as 4 door vehicles. Most vehicles are likely to have a trunk and it intutively makes sense to have an even number of doors per vehicle.
+
+#### Seats:
+
+The distribution of the quartiles of seats suggests that the data is very short tailed and clustered around the 5 seats that we would expect in a standard sedan or SUV. Viewing the histogram of this variable should be able to help significantly. More analysis to come in the next section.
 
 ### Analysis of Histograms of Variables:
 
@@ -68,7 +99,7 @@ pairs(data[, columns_to_plot], main = "Bivariate plots: Price vs others")
 
 ## Initial Preview of the Full Regression Model
 
-Here we create a full model using all continuous predictors of "Price", the summary of which can be seen below: 
+Here we create a full model using all continuous predictors of "Price", the summary of which can be seen below:
 
 ```{r, echo = FALSE}
 full_model = lm(Price~ . - Body_Type, data)
