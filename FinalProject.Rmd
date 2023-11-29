@@ -105,3 +105,4 @@ Here we create a full model using all continuous predictors of "Price", the summ
 full_model = lm(Price~ . - Body_Type, data)
 summary(full_model)
 ```
+test
