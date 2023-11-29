@@ -105,3 +105,22 @@ Here we create a full model using all continuous predictors of "Price", the summ
 full_model = lm(Price~ . - Body_Type, data)
 summary(full_model)
 ```
+The estimate of the intercepts for each of the predictors makes intuituve sense. 
+
+### Mileage
+The intercept of 0.02437 means that, on average and with all other variables held constant, an increase in mileage of one mile lowers the sale price by 0.02437 dollars. This makes intuitive sense, as a car with greater mileage is expected to have lesser value. 
+
+### Registration Year 
+The intercept of 715.4 means that, on average and with all other variables held constant, an increase in registration year by one year raises the sale price by 715.4 dollars. This makese sense, as newer cars are expected to be more valuable. 
+
+### Previous Owners
+The intercept of -308.0 means that, on average and with all other variables held constant, an increase in previous owners by one owner lowers the sale price by 308 dollars. This makes sense, as cars that have been sold and resold more often have less value. 
+
+### Engine
+The intercept of 2766 means that, on average and with all other variables held constant, an increase in engine size by 1 liter raises the sale price by 2766 dollars. This isn't as intuituve as the other predictors, but a larger, more powerful engines are expected to add value to the car. 
+
+### Doors
+The intercept of -113.6 means that, on average and with all other variables held constant, an increase in the number of doors by 1 door lowers the sale price of the car by 113 dollars. This is not an intuitive prediction, and when looking at the p-value of this intercept, it is relatively large compared to the other predictors. Therefore, it might be wise to consider eliminating this variable from our final model. 
+
+### Seats 
+The intercept of -391.5 means that, on average and with all other variables held constant, an increase in the number of seats in the car by 1 lowers the sale price of the car by 391.5 dollars. This is also not as inuitive as the previous predictors, but the significance p-value seems to suggest that the number of seats could be a relevant predictor in our model. 
