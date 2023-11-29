@@ -175,3 +175,28 @@ shapiro.test(residuals)
 ```
 
 This is the Shapiro-Wilk normality test. For normality we would be looking for the p-value to be high, however this p-value of 2.2e-16 is just about as low as it gets. This would mean that the residuals (at least as they are now including the outliers) fail the normality test.
+
+## Checking for High Leverage Points
+
+We can check the leverage using the hatvalues function.
+
+```{r, echo = FALSE}
+leverage_values = hatvalues(full_model)
+plot(leverage_values, main = "Leverage Values", xlab = "Observation", ylab = "Leverage")
+
+```
+
+Immediately upon finding and plotting the leverage values we can see that there are a few high leverage points. One point is EXTREMELY high leverage. In order to better work with these points lets find the points specifically that we would consider high leverage. In this case take "high leverage" to mean at least twice the mean leverage of all points.
+
+```{r, echo = FALSE}
+high_leverage_points <- which(leverage_values > 2 * mean(leverage_values))
+length(high_leverage_points)
+```
+
+With the points isolated we see that there are actually 185 points that are high leverage which is many more than the initial estimate you might have just by viewing the graph. These points are now saved to the vector `high_leverage_points` for easy access later. Plotting the high leverage points in a different color is helpful to see which they are as well:
+
+```{r, echo = FALSE}
+plot(leverage_values, main = "Leverage Values", xlab = "Observation", ylab = "Leverage")
+points(high_leverage_points, leverage_values[high_leverage_points], col = "red", pch = 16)
+
+```
