@@ -142,15 +142,21 @@ Our initial GOF of 0.70 for the full model is moderately high, but we would like
 
 ## Checking Constant Variance Assumption
 
-residuals \<- resid(full_model) Rstudent_residuals \<- rstudent(full_model) fitted_values \<- fitted(full_model)
-
 ```{r, echo = FALSE}
+
+par(mfrow = c(1, 2))
+
+fitted_values = fitted(full_model)
+residuals = resid(full_model)
 Resid_Plot <- plot(fitted_values, residuals, main = "Residuals vs Fitted Values",
 xlab = "Fitted Values", ylab = "Residuals")
 abline(h=0)
 
+Rstudent_residuals = rstudent(full_model)
 RstudentResid_Plot <- plot(fitted_values, Rstudent_residuals, main = "R-student Residuals vs Fitted Values",
 xlab = "Fitted Values", 
 ylab = "R-student Residuals")
 abline(h=0)
 ```
+
+Reviewing both the plots of Residuals vs Fitted Values and the R-Student Residuals vs Fitted Values we see significant clustering around (7500,0) and there is a clear shape to the scattered points in the shape of a sort of crescent. A model with constant variance would have Residuals vs Fitted Value plots what are randomly scattered both above and below the baseline (y=0) and evenly spread across the extent of the fitted values. This is not what we see here, so from these graphs we would anecdotally expect that this model is heteroscedastic, but this may also indicate non linearity.
