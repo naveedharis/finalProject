@@ -8,7 +8,7 @@ output: pdf_document
 
 ## Data Cleanup:
 
-First, we have to load in our data. The head of the data can be seen below: Be sure to download the file to the correct location on your machine or the connection will not open properly.
+First, we have to load in our data. The head of the data can be seen below: Be sure to download the file to the correct location on your machine or the connection will not open properly...
 
 ```{r, echo=FALSE}
 raw_data = read.csv("used_cars_UK.csv", fileEncoding = "UTF-8")
