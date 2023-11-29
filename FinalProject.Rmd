@@ -200,3 +200,11 @@ plot(leverage_values, main = "Leverage Values", xlab = "Observation", ylab = "Le
 points(high_leverage_points, leverage_values[high_leverage_points], col = "red", pch = 16)
 
 ```
+
+## Checking for Outlier Points in y
+
+To check for outlier's in y we can use the residuals vs fitted value plot, but since we already used this plot above and commented slightly on the possibility of outliers using the Bonferroni correction to establish the points themselves is a better way.
+
+```{r, echo = FALSE}
+### NOTE: JACK WAS NOT ABLE TO GET THIS TO WORK SUCCESSFULLY
+```
