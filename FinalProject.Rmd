@@ -128,3 +128,20 @@ The intercept of -391.5 means that, on average and with all other variables held
 ### Initial GOF
 Our initial GOF of 0.70 for the full model is moderately high, but we would like it to be larger. As of now, about 70% of the variability in the sale price of the cars is accounted for by our model. 
 
+# Model Diagnostics
+
+## Checking Constant Variance Assumption 
+residuals <- resid(full_model)
+Rstudent_residuals <- rstudent(full_model)
+fitted_values <- fitted(full_model)
+
+```{r, echo = FALSE}
+Resid_Plot <- plot(fitted_values, residuals, main = "Residuals vs Fitted Values",
+xlab = "Fitted Values", ylab = "Residuals")
+abline(h=0)
+
+RstudentResid_Plot <- plot(fitted_values, Rstudent_residuals, main = "R-student Residuals vs Fitted Values",
+xlab = "Fitted Values", 
+ylab = "R-student Residuals")
+abline(h=0)
+```
