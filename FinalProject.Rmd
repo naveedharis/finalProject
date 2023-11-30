@@ -201,6 +201,11 @@ points(high_leverage_points, leverage_values[high_leverage_points], col = "red",
 
 ```
 
+The car corresponding to index 1036 has the largest leverage point of 0.337. Upon 
+inspecting the dataframe this car has over 1.1 million miles, so it makes sense why 
+it has such great influence. There are many other notable points looking at this plot
+which have leverages over the threshold of 2\*(k+1/n), so we should consider eliminating those in the future.
+
 ## Checking for Outlier Points in y
 
 To check for outlier's in y we can use the residuals vs fitted value plot, but since we already used this plot above and commented slightly on the possibility of outliers using the Bonferroni correction to establish the points themselves is a better way.
