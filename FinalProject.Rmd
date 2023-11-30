@@ -88,6 +88,8 @@ for (col in names(data)) {
 
 --- Comments about above histograms---
 
+Viewing the Histograms helps to clarify some of the assumptions made in the summary phase. While a variable by variable break down is likely repetitious covering a few of the histograms is helpful. Price, Mileage, Registration Year, and engine all have suspected outlier values which distort the histogram. If these are confirmed outliers and removed a re-plotting of these histograms would provide a better view of the distribution of the data. We also see some skews in the data bieng confirmed. Price and Previous Owners are clearly right skewed distributions while Registration Year, Seats, and Engine may be approximately normal. More analysis would be needed to confirm this assumption
+
 ### Analysis of Bivariate Plots of Price:
 
 ```{r, echo = FALSE}
@@ -105,47 +107,60 @@ Here we create a full model using all continuous predictors of "Price", the summ
 full_model = lm(Price~ . - Body_Type, data)
 summary(full_model)
 ```
-The estimate of the intercepts for each of the predictors makes intuituve sense. 
+
+The estimate of the intercepts for each of the predictors makes intuituve sense.
 
 ### Mileage
+
 The intercept of 0.02437 means that, on average and with all other variables held constant, an increase in mileage of one mile lowers the sale price by 0.02437 dollars. This makes intuitive sense, as a car with greater mileage is expected to have lesser value. The significance of the intercept is significant.
 
-### Registration Year 
+### Registration Year
+
 The intercept of 715.4 means that, on average and with all other variables held constant, an increase in registration year by one year raises the sale price by 715.4 dollars. This makese sense, as newer cars are expected to be more valuable. The significance of the intercept is significant.
 
 ### Previous Owners
+
 The intercept of -308.0 means that, on average and with all other variables held constant, an increase in previous owners by one owner lowers the sale price by 308 dollars. This makes sense, as cars that have been sold and resold more often have less value. The significance of the intercept is significant.
 
 ### Engine
+
 The intercept of 2766 means that, on average and with all other variables held constant, an increase in engine size by 1 liter raises the sale price by 2766 dollars. This isn't as intuituve as the other predictors, but a larger, more powerful engines are expected to add value to the car. The significance of the intercept is significant.
 
 ### Doors
-The intercept of -113.6 means that, on average and with all other variables held constant, an increase in the number of doors by 1 door lowers the sale price of the car by 113 dollars. This is not an intuitive prediction, and when looking at the p-value of this intercept, it is relatively large compared to the other predictors. Therefore, it might be wise to consider eliminating this variable from our final model. 
 
-### Seats 
+The intercept of -113.6 means that, on average and with all other variables held constant, an increase in the number of doors by 1 door lowers the sale price of the car by 113 dollars. This is not an intuitive prediction, and when looking at the p-value of this intercept, it is relatively large compared to the other predictors. Therefore, it might be wise to consider eliminating this variable from our final model.
+
+### Seats
+
 The intercept of -391.5 means that, on average and with all other variables held constant, an increase in the number of seats in the car by 1 lowers the sale price of the car by 391.5 dollars. This is also not as inuitive as the previous predictors, but the significance p-value seems to suggest that the number of seats could be a relevant predictor in our model. The significance of the intercept is significant.
 
 ### Initial GOF
-Our initial GOF of 0.70 for the full model is moderately high, but we would like it to be larger. As of now, about 70% of the variability in the sale price of the cars is accounted for by our model. 
+
+Our initial GOF of 0.70 for the full model is moderately high, but we would like it to be larger. As of now, about 70% of the variability in the sale price of the cars is accounted for by our model.
 
 # Model Diagnostics
 
-## Checking Constant Variance Assumption 
-residuals <- resid(full_model)
-Rstudent_residuals <- rstudent(full_model)
-fitted_values <- fitted(full_model)
+## Checking Constant Variance Assumption
 
 ```{r, echo = FALSE}
+
+par(mfrow = c(1, 2))
+
+fitted_values = fitted(full_model)
+residuals = resid(full_model)
 Resid_Plot <- plot(fitted_values, residuals, main = "Residuals vs Fitted Values",
 xlab = "Fitted Values", ylab = "Residuals")
 abline(h=0)
 
+Rstudent_residuals = rstudent(full_model)
 RstudentResid_Plot <- plot(fitted_values, Rstudent_residuals, main = "R-student Residuals vs Fitted Values",
 xlab = "Fitted Values", 
 ylab = "R-student Residuals")
 abline(h=0)
 ```
-Reviewing both the plots of Residuals vs Fitted Values and the R-Student Residuals vs Fitted Values we see significant clustering around (7500,0) and there is a clear shape to the scattered points in the shape of a sort of crescent. A model with constant variance would have Residuals vs Fitted Value plots what are randomly scattered both above and below the baseline (y=0) and evenly spread across the extent of the fitted values. This is not what we see here, so from these graphs we would anecdotally expect that this model is heteroscedastic, but this may also indicate non linearity.
+
+-------------------------------------------
+The following was done by Andy after Jack had pushed the same tasks, so we can delete redunancies later.
 
 ## Normality Assumptions
 ### qq-plots
@@ -180,5 +195,57 @@ inspecting the dataframe this car has over 1.1 million miles, so it makes sense 
 it has such great influence. There are many other notable points looking at this plot
 which have leverages over the threshold of 2*(k+1/n), so we should consider eliminating those in the future. 
 
+----------------------------------------- End of Andy's work 
 
+=======
 
+Reviewing both the plots of Residuals vs Fitted Values and the R-Student Residuals vs Fitted Values we see significant clustering around (7500,0) and there is a clear shape to the scattered points in the shape of a sort of crescent. A model with constant variance would have Residuals vs Fitted Value plots what are randomly scattered both above and below the baseline (y=0) and evenly spread across the extent of the fitted values. This is not what we see here, so from these graphs we would anecdotally expect that this model is heteroscedastic, but this may also indicate non linearity.
+
+## Checking Normality using QQ-Plots and Tests
+
+```{r, echo = FALSE}
+qqnorm(residuals) #Residuals Already Defined in the evnironment above
+qqline(residuals)
+```
+
+Points which closely follow the line would suggest residuals which are approximately normally distributed. In the qq plot above we see that this is somewhat true. The VAST majority of the residuals are normally distributed except for some at the top of the distribution around the third quantile. This is likely because these are outline points which don't align well to the model and therefore have very high residual values. A more quantitative test or revisiting this later would be helpful to clarify it.
+
+```{r, echo = FALSE}
+shapiro.test(residuals)
+```
+
+This is the Shapiro-Wilk normality test. For normality we would be looking for the p-value to be high, however this p-value of 2.2e-16 is just about as low as it gets. This would mean that the residuals (at least as they are now including the outliers) fail the normality test.
+
+## Checking for High Leverage Points
+
+We can check the leverage using the hatvalues function.
+
+```{r, echo = FALSE}
+leverage_values = hatvalues(full_model)
+plot(leverage_values, main = "Leverage Values", xlab = "Observation", ylab = "Leverage")
+
+```
+
+Immediately upon finding and plotting the leverage values we can see that there are a few high leverage points. One point is EXTREMELY high leverage. In order to better work with these points lets find the points specifically that we would consider high leverage. In this case take "high leverage" to mean at least twice the mean leverage of all points.
+
+```{r, echo = FALSE}
+high_leverage_points <- which(leverage_values > 2 * mean(leverage_values))
+length(high_leverage_points)
+```
+
+With the points isolated we see that there are actually 185 points that are high leverage which is many more than the initial estimate you might have just by viewing the graph. These points are now saved to the vector `high_leverage_points` for easy access later. Plotting the high leverage points in a different color is helpful to see which they are as well:
+
+```{r, echo = FALSE}
+plot(leverage_values, main = "Leverage Values", xlab = "Observation", ylab = "Leverage")
+points(high_leverage_points, leverage_values[high_leverage_points], col = "red", pch = 16)
+
+```
+
+## Checking for Outlier Points in y
+
+To check for outlier's in y we can use the residuals vs fitted value plot, but since we already used this plot above and commented slightly on the possibility of outliers using the Bonferroni correction to establish the points themselves is a better way.
+
+```{r, echo = FALSE}
+### NOTE: JACK WAS NOT ABLE TO GET THIS TO WORK SUCCESSFULLY
+```
+>>>>>>> 48d90f08a3618e4e48257ab78a521460e4d680e9
