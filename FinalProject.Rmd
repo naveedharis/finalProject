@@ -208,14 +208,14 @@ The car corresponding to index 1036 has the largest leverage point of 0.337. Upo
 To check for outlier's in y we can use the residuals vs fitted value plot, but since we already used this plot above and commented slightly on the possibility of outliers using the Bonferroni correction to establish the points themselves is a better way.
 
 ```{r, echo = FALSE}
-### NOTE: JACK WAS NOT ABLE TO GET THIS TO WORK SUCCESSFULLY
+### NOTE: JACK WAS NOT ABLE TO GET THIS TO WORK SUCCESSFULLY CAN SOMEONE ELSE TRY?
 ```
 
 ## Checking for Influential Points
 
 We will use Cook's Distance to check for influential points, as it determines how much the fitted values change when the ith data point is removed. Cook's Distance values larger than 1 will be considered influential, and values lesser than 0.5 will be considered not influential.
 
-cook_full <- cooks.distance(full_model)
+cook_full \<- cooks.distance(full_model)
 
 ```{r, echo = FALSE}
 plot(cook_full, ylab="Cook's Distance", main="Cook's Distance", type="l")
@@ -227,27 +227,27 @@ Observation 1036 is determined to be a very obvious outlier. This same index was
 I will also renumber the indices in our dataset, because observation 1036 corresponds to index 620 following data cleanup. This will align the two values.
 
 ### Renumbering indices
-new_indices <- 1:nrow(data)
-rownames(data) <- new_indices
+
+new_indices \<- 1:nrow(data) rownames(data) \<- new_indices
 
 ### Removing observation 620 (formerly observation 1036)
-data_2 <- data[-620, ]
+
+data_2 \<- data[-620, ]
 
 ### Reanalyzing fit of model and Cook's Distance without this point
-full_model_2 <- lm(Price~ . - Body_Type, data_2)
+
+full_model_2 \<- lm(Price\~ . - Body_Type, data_2)
 
 ```{r, echo = FALSE}
 summary(full_model_2)
 ```
+
 We see here that our adjusted R-squared increased by about 0.022. Let's check Cook's Distance
 
-cook_full_2 <- cooks.distance(full_model_2)
-plot(cook_full_2, ylab="Cook's Distance", main="Cook's Distance", type="l")
+cook_full_2 \<- cooks.distance(full_model_2) plot(cook_full_2, ylab="Cook's Distance", main="Cook's Distance", type="l")
 
 ```{r, echo = FALSE}
 cook_full_2[which.max(cook_full_2)]
 ```
 
 Our new largest Cook's Distance is 0.11, which is less than our threshold of 0.5. This tells us that our new dataset does not contain significantly influential points.
-
-
