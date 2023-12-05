@@ -251,3 +251,16 @@ cook_full_2[which.max(cook_full_2)]
 ```
 
 Our new largest Cook's Distance is 0.11, which is less than our threshold of 0.5. This tells us that our new dataset does not contain significantly influential points.
+
+##Checking for Outlier Points in y (attempt 2)
+
+We will look at the jackknife residuals of our new full model, and test againat the null hypothesis that none of our responses are outliers. 
+
+```{r, echo = FALSE}
+jackknife_residuals <- rstudent(full_model_2)
+jackknife_residuals[which.max(abs(jackknife_residuals))]
+qt(.05/(2247*2), 2239)
+```
+
+Our largest jackknife residual of 8.99 is larger than our critical value of 4.25, so we reject the null hypothesis that none of our responses are outlying, and conclude that at least one of the used car sale prices is an outlier in the dataset. 
+
