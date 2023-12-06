@@ -264,3 +264,12 @@ qt(.05/(2247*2), 2239)
 
 Our largest jackknife residual of 8.99 is larger than our critical value of 4.25, so we reject the null hypothesis that none of our responses are outlying, and conclude that at least one of the used car sale prices is an outlier in the dataset. 
 
+## Checking the structure of the model 
+
+```{r, echo = FALSE}
+plot(full_model_2)
+```
+
+The following can be determined from looking at the Residuals vs Leverage plot of the model. Despite having relatively large residuals, indices 718, 706, and 1531 are still within the bands of D=0.5 and D=1. Therefore, they are being kept in our analysis. 
+
+# Exploring Possibility of a Box-Cox Transformation 
