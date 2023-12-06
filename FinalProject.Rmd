@@ -273,3 +273,16 @@ plot(full_model_2)
 The following can be determined from looking at the Residuals vs Leverage plot of the model. Despite having relatively large residuals, indices 718, 706, and 1531 are still within the bands of D=0.5 and D=1. Therefore, they are being kept in our analysis. 
 
 # Exploring Possibility of a Box-Cox Transformation 
+
+library(MASS)
+
+```{r, echo = FALSE}
+boxcox(full_model_2, plotit=T)
+boxcox(full_model_2, plotit=T, lambda=seq(0.1, 0.3, by=0.05))
+```
+
+As we can see in our plot, lambda = 1 is not within the range of plausible values. As a result, it would be good to perform a box-cox transformation on our model. Specifically, the center of our interval lies around 0.16 = (1/6), so a transformation of the response to the power of 1/6 seems plausible. 
+
+
+
+
