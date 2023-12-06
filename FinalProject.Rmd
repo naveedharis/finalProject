@@ -283,6 +283,38 @@ boxcox(full_model_2, plotit=T, lambda=seq(0.1, 0.3, by=0.05))
 
 As we can see in our plot, lambda = 1 is not within the range of plausible values. As a result, it would be good to perform a box-cox transformation on our model. Specifically, the center of our interval lies around 0.16 = (1/6), so a transformation of the response to the power of 1/6 seems plausible. 
 
+## Creating new model with transformation
+
+full_model_transformed <- lm(Price^(1/6)~ . - Body_Type, data_2)
+
+```{r, echo = FALSE}
+summary(full_model_transformed)
+```
+
+Looking at this summary, we can see that our adjusted R-squared value increased significantly from .72 to nearly .79. The significance of our predictors remained largely unchanged; however, the magnitudes of the betas are drastically different. 
+
+## Reperforming Model Diagnostics
+
+### Checking for homoskedasticity
+
+```{r, echo = FALSE}
+plot(full_model_transformed)
+```
+
+When we revisit the plot of residuals vs fitted values, the previously seen crescent shape has turned into a more evenly scattered distribution, which is what we wanted to see. Observations 706 and 718 still have very large residuals. Overall, the distribution looks more homoskedastic. 
+
+### Checking normality assumption using qq-plots and S-W Normality Test
+
+Looking at the QQ-Residuals plot, the vast majority of the residuals fall on the qq-line. However, a few in partifular stray far from this line - including observations 718 and 706 as previously noted. 
+
+```{r, echo = FALSE}
+shapiro.test(resid(full_model_transformed))
+```
+
+When we reperform the S-W test, we once again receive an extremely low p-value, indicating that we should conclude that our data is still not normally distributed. 
+
+
+
 
 
 
