@@ -215,9 +215,8 @@ To check for outlier's in y we can use the residuals vs fitted value plot, but s
 
 We will use Cook's Distance to check for influential points, as it determines how much the fitted values change when the ith data point is removed. Cook's Distance values larger than 1 will be considered influential, and values lesser than 0.5 will be considered not influential.
 
-cook_full \<- cooks.distance(full_model)
-
 ```{r, echo = FALSE}
+cook_full <- cooks.distance(full_model)
 plot(cook_full, ylab="Cook's Distance", main="Cook's Distance", type="l")
 cook_full[which.max(cook_full)]
 ```
@@ -228,31 +227,35 @@ I will also renumber the indices in our dataset, because observation 1036 corres
 
 ### Renumbering indices
 
-new_indices \<- 1:nrow(data) rownames(data) \<- new_indices
+```{r, echo = FALSE}
+new_indices <- 1:nrow(data) 
+rownames(data) <- new_indices
+```
 
 ### Removing observation 620 (formerly observation 1036)
 
-data_2 \<- data[-620, ]
+```{r, echo = FALSE}
+data_2 <- data[-620, ]
+```
 
 ### Reanalyzing fit of model and Cook's Distance without this point
 
-full_model_2 \<- lm(Price\~ . - Body_Type, data_2)
-
 ```{r, echo = FALSE}
+full_model_2 <- lm(Price~ . - Body_Type, data_2)
 summary(full_model_2)
 ```
 
 We see here that our adjusted R-squared increased by about 0.022. Let's check Cook's Distance
 
-cook_full_2 \<- cooks.distance(full_model_2) plot(cook_full_2, ylab="Cook's Distance", main="Cook's Distance", type="l")
-
 ```{r, echo = FALSE}
+cook_full_2 <- cooks.distance(full_model_2) 
+plot(cook_full_2, ylab="Cook's Distance", main="Cook's Distance", type="l")
 cook_full_2[which.max(cook_full_2)]
 ```
 
 Our new largest Cook's Distance is 0.11, which is less than our threshold of 0.5. This tells us that our new dataset does not contain significantly influential points.
 
-##Checking for Outlier Points in y (attempt 2)
+## Checking for Outlier Points in y (attempt 2)
 
 We will look at the jackknife residuals of our new full model, and test againat the null hypothesis that none of our responses are outliers.
 
@@ -274,9 +277,8 @@ The following can be determined from looking at the Residuals vs Leverage plot o
 
 # Exploring Possibility of a Box-Cox Transformation
 
-library(MASS)
-
 ```{r, echo = FALSE}
+library(MASS)
 boxcox(full_model_2, plotit=T)
 boxcox(full_model_2, plotit=T, lambda=seq(0.1, 0.3, by=0.05))
 ```
@@ -285,9 +287,8 @@ As we can see in our plot, lambda = 1 is not within the range of plausible value
 
 ## Creating new model with transformation
 
-full_model_transformed \<- lm(Price\^(1/6)\~ . - Body_Type, data_2)
-
 ```{r, echo = FALSE}
+full_model_transformed <- lm(Price^(1/6)~ . - Body_Type, data_2)
 summary(full_model_transformed)
 ```
 
@@ -315,10 +316,9 @@ When we reperform the S-W test, we once again receive an extremely low p-value, 
 
 # Exploring Serial Correlation in the Errors
 
-library(nlme)
-
-nlme <- gls(Price~ . - Body_Type, correlation=corARMA(p=1), data=data_2)
 ```{r, echo = FALSE}
+library(nlme)
+nlme <- gls(Price~ . - Body_Type, correlation=corARMA(p=1), data=data_2)
 summary(nlme)
 ```
 
@@ -327,6 +327,5 @@ We see that the estimated value of rho is 0.07. To check if this is significant,
 ```{r, echo = FALSE}
 intervals(nlme)
 ```
+
 Becasue 0 is not contained in the confidence interval for rho, there is evidence of serial correlation of the errors
-
-
