@@ -215,6 +215,20 @@ qt(.05/(2248*2), 2240)
 
 The largest residual identified had a value of 13.2 which is way larger than our critical value of 4.25, so we reject the null hypothesis that none of our responses are outlying, and conclude that at least one of the used car sale prices is an outlier in the dataset. Since it is so high above the critical value it is likely that we have more than 1 outlier but that is not something we would be able to tell from here.
 
+```{r, echo = FALSE}
+plot(fitted_values, jackknife_residuals, main = "Jackknife Residuals vs Fitted Values", 
+     xlab = "Fitted Values", ylab = "Jackknife Residuals")
+
+abline(h = 0, col = "red", lty = 2)
+
+text(fitted_values[abs(jackknife_residuals) > 4.25], 
+     jackknife_residuals[abs(jackknife_residuals) > 4.25], 
+     labels = which(abs(jackknife_residuals) > 4.25), col = "blue")
+legend("topright", legend = c("Outliers"), col = c("blue"), pch = 1)
+```
+
+This graph helps us identify points likely to be outliers. They are compared on a graph of the jackknife residuals vs fitted values and the points which are likely to be outliers based on this are marked in blue. We will remove these in the next part and assess again.
+
 ## Checking for Influential Points
 
 We will use Cook's Distance to check for influential points, as it determines how much the fitted values change when the ith data point is removed. Cook's Distance values larger than 1 will be considered influential, and values lesser than 0.5 will be considered not influential.
@@ -239,7 +253,7 @@ rownames(data) <- new_indices
 ### Removing observation 620 (formerly observation 1036)
 
 ```{r, echo = FALSE}
-data_2 <- data[-620, ]
+data_2 <- data[-c(620, 706, 718, 1158, 1958, 1764, 1967, 1893), ]
 ```
 
 ### Reanalyzing fit of model and Cook's Distance without this point
@@ -249,7 +263,7 @@ full_model_2 <- lm(Price~ . - Body_Type, data_2)
 summary(full_model_2)
 ```
 
-We see here that our adjusted R-squared increased by about 0.022. Let's check Cook's Distance
+We see the adjusted R squared changed by about 0.0437 after removing these points.
 
 ```{r, echo = FALSE}
 cook_full_2 <- cooks.distance(full_model_2) 
@@ -257,19 +271,44 @@ plot(cook_full_2, ylab="Cook's Distance", main="Cook's Distance", type="l")
 cook_full_2[which.max(cook_full_2)]
 ```
 
-Our new largest Cook's Distance is 0.11, which is less than our threshold of 0.5. This tells us that our new dataset does not contain significantly influential points.
+Our new largest Cook's Distance is 0.05, which is much less than our threshold of 0.5. This tells us that our new dataset does not contain significantly influential points.
 
 ## Checking for Outlier Points in y (attempt 2)
 
 We will look at the jackknife residuals of our new full model, and test againat the null hypothesis that none of our responses are outliers.
 
 ```{r, echo = FALSE}
-jackknife_residuals <- rstudent(full_model_2)
-jackknife_residuals[which.max(abs(jackknife_residuals))]
-qt(.05/(2247*2), 2239)
+new_jackknife_residuals <- rstudent(full_model_2)
+new_jackknife_residuals[which.max(abs(new_jackknife_residuals))]
+qt(.05/(2240*2), 2232)
 ```
 
-Our largest jackknife residual of 8.99 is larger than our critical value of 4.25, so we reject the null hypothesis that none of our responses are outlying, and conclude that at least one of the used car sale prices is an outlier in the dataset.
+Our largest jackknife residual of 5.135 is larger than our critical value of 4.25, so we reject the null hypothesis that none of our responses are outlying, and conclude that at least one of the used car sale prices is an outlier in the dataset.
+
+```{r, echo = FALSE}
+new_fitted_values = fitted(full_model_2)
+plot(new_fitted_values, new_jackknife_residuals, main = "Jackknife Residuals vs Fitted Values", 
+     xlab = "Fitted Values", ylab = "Jackknife Residuals")
+
+abline(h = 0, col = "red", lty = 2)
+
+text(new_fitted_values[abs(new_jackknife_residuals) > 4.25], 
+     new_jackknife_residuals[abs(new_jackknife_residuals) > 4.25], 
+     labels = which(abs(new_jackknife_residuals) > 4.25), col = "blue")
+legend("topright", legend = c("Outliers"), col = c("blue"), pch = 1)
+```
+
+We have now identified an additional point, 1184 as an outlier. Lets drop that and check again.
+
+```{r, echo = FALSE}
+data_2 <- data_2[-c(1184), ]
+full_model_2 <- lm(Price~ . - Body_Type, data_2)
+new_jackknife_residuals <- rstudent(full_model_2)
+new_jackknife_residuals[which.max(abs(new_jackknife_residuals))]
+qt(.05/(2240*2), 2232)
+```
+
+We can see here that the jackknife residuals are approaching the critical value. It isnt quite under the critical value but it is remarkably close.
 
 ## Checking the structure of the model
 
@@ -277,9 +316,9 @@ Our largest jackknife residual of 8.99 is larger than our critical value of 4.25
 plot(full_model_2)
 ```
 
-The following can be determined from looking at the Residuals vs Leverage plot of the model. Despite having relatively large residuals, indices 718, 706, and 1531 are still within the bands of D=0.5 and D=1. Therefore, they are being kept in our analysis.
+Having already dropped the points that were identified as outliers above all remaning points are well within the cook distance even if they do stray from the line.
 
-# Exploring Possibility of a Box-Cox Transformation
+## Exploring Possibility of a Box-Cox Transformation
 
 ```{r, echo = FALSE}
 library(MASS)
@@ -296,7 +335,7 @@ full_model_transformed <- lm(Price^(1/6)~ . - Body_Type, data_2)
 summary(full_model_transformed)
 ```
 
-Looking at this summary, we can see that our adjusted R-squared value increased significantly from .72 to nearly .79. The significance of our predictors remained largely unchanged; however, the magnitudes of the betas are drastically different.
+Looking at this summary, we can see that our adjusted R-squared value increased significantly from .72 to 0.8. The significance of our predictors remained largely unchanged; however, the magnitudes of the betas are drastically different.
 
 ## Reperforming Model Diagnostics
 
@@ -310,7 +349,7 @@ When we revisit the plot of residuals vs fitted values, the previously seen cres
 
 ### Checking normality assumption using qq-plots and S-W Normality Test
 
-Looking at the QQ-Residuals plot, the vast majority of the residuals fall on the qq-line. However, a few in partifular stray far from this line - including observations 718 and 706 as previously noted.
+Looking at the QQ-Residuals plot, the vast majority of the residuals fall on the qq-line. However, a few in partifular stray far from this line, notable 1531.
 
 ```{r, echo = FALSE}
 shapiro.test(resid(full_model_transformed))
