@@ -372,3 +372,115 @@ intervals(nlme)
 ```
 
 Becasue 0 is not contained in the confidence interval for rho, there is evidence of serial correlation of the errors
+
+# 7. Assess potential multicollinearity as in Topic 16
+
+In order to assess multicollinearity between the predictors, we must create a list of the eigenvalues. First, we establish the design matrix of the model, and remove the first column (the intercept). Then, we call eigen(Xstar'*Xstar) to get a list of the eigenvalues of the matrix.
+
+```{r}
+design_matrix <- model.matrix(full_model)
+design_matrix_star <- design_matrix[,-1]
+e<-eigen(t(design_matrix_star)%*%design_matrix_star)
+```
+
+With e now representing a list of the eigenvalues, we can print them out to see any trends
+
+```{r}
+e$val
+```
+
+We can see that the eigenvalues have large differences in scale. To actually determine of we have a collinearirty problem, we must determine the condition number of each one.
+
+```{r}
+sqrt(e$val[1]/e$val)
+```
+
+This has revealed that the condition number of every eigenvalue is larger than 30, ranging from ~101 to ~220929. This strongly suggests that our predictors have a high degree of collinearity, leading to problems arising from the columns of the design matrix being linear combinations of each other.
+
+```{r}
+library(faraway)
+```
+
+Now, let's check the variance inflation factor (VIF) of each of the predictors. We must utilize the faraway library to access the vif() function.
+
+```{r}
+vif(design_matrix_star)
+```
+
+Calling vif() on the design matrix (without the first column) indicates the variance inflation factor for each predictor, of the factor by which the variance of that regressor is increased due to dependence on the other regressors. As all the VIFs are below 10, this suggests that the variances of each regressor are not impacted by that regressors's dependence on the other regressors.
+
+# 8. If possible, apply an exhaustive model selection search as in Topic 17 using the different selection criteria we covered in class
+
+We can use the leaps library to access the leaps() and regsubsets() functions, which we will need to apply an exaustive model selection search.
+
+```{r}
+library(leaps)
+```
+
+We will make two new variables representing the inputs (leaps_x) and output (leaps_y) of our data from our original dataset.
+
+```{r}
+leaps_x <- data[, -1]
+leaps_y <- data$Price
+```
+
+Next, we will perform extra cleaning on the data using the complete.cases() function, which removes rows that have NAs, which the leaps() function is particuarly sensitive to.
+
+```{r}
+data_clean<-complete.cases(leaps_x, leaps_y)
+leaps_x_clean<-leaps_x[data_clean,]
+leaps_y_clean<-leaps_y[data_clean]
+```
+
+Under normal circumstances, the line below, that calls for leaps() on our data to perform all possible regression methodologies, would work as intended. Problematically, if data has high collinearity (as seen in part 7), leaps() may not function properly or even crash RStudio. 
+
+```{r}
+#leaps_adjr2_result<-leaps(leaps_x_clean, leaps_y_clean, method="adjr2")
+#Running the above line with any method ("r2", "adjr2", or "Cp") crashes RStudio. Searching indicated that this is a known issue with leaps() if the data has very high collinearity, which it does as indicated in Task 7.
+```
+
+Fortunately, there are other methods that we can use to apply an exhaustive model selection search to our data. This comes in the form of the leaps library's regsubsets() function. We will use it to determine a ranking of the models based on the adjusted r-squared value.
+
+```{r}
+subsets_results_1<-regsubsets(Price~Mileage+Registration_Year+Previous_Owners+Engine+Doors+Seats, data=data, nbest=1, method="exhaustive")
+```
+
+Here, we establish subsets_results_1 as a result of regsubsets() on our data, adding the best parameter 1 at a time until we are using all 6 parameter for a total of 6 models. Note that we have removed the Body_Type parameter from the input of our regsubsets(), as the function splits up catagorical variables so that each response becomes its own parameter with a value of "1" or "0", as regsubsets() is built for numerical parameters.
+
+```{r}
+regsubsets_1<-summary(subsets_results_1)
+regsubsets_1
+```
+
+A summary of the results shows that Registration_Year is the best parameter to use if we can only use 1 parameter, followed (in order) by Engine, Mileage, Previous_Owners, Seats, and finally Doors. We can observe the adjusted r-squared visually by plotting it.
+
+```{r}
+par(mfrow=c(1,2))
+plot(2:7, regsubsets_1$adjr2, xlab="No. of Parameters", ylab="Adjusted R-square")
+plot(subsets_results_1, scale="adjr2")
+```
+
+Starting with the left plot, we can see that the adjusted r-squared increases the more parameters we have (assuming we always have the intercept, which is why it starts at 2), although it flattens out once we have 4 parameters at around 0.695. The right plot indicates which parameters we choose at each adjusted r-squared value, providing the same information as the summary pf regsubsets_1 above.
+
+What if we want to know which models are best if we can examine the best 2 models instead of the single best model for each # of parameters? We can check by adjusting the nbest value in regsubsets() from 1 to 2.
+
+```{r}
+subsets_results_2<-regsubsets(Price~Mileage+Registration_Year+Previous_Owners+Engine+Doors+Seats, data=data, nbest=2, method="exhaustive")
+```
+
+Here, we establish subsets_results_2 as a result of regsubsets() on our data, checking the top 2 parameter additions each time until we are using all 6 parameters for a new total of 11 models. We will keep Body_Type removed for the same reasons as in subsets_results_1.
+
+```{r}
+regsubsets_2<-summary(subsets_results_2)
+regsubsets_2
+```
+
+A summary of subsets_results_2 shows that, again, Registration_Year is the best parameter to work with if we only have access to 1 parameter. However, using only Mileage creates a higher adjusted r-squared model than using only Engine, even though Engine was the 2nd parameter added when nbest=1 the last time we ran regsubsets().
+
+```{r}
+par(mfrow=c(1,2))
+plot(c(2,2,3,3,4,4,5,5,6,6,7), regsubsets_2$adjr2, xlab="No. of Parameters", ylab="Adjusted R-square")
+plot(subsets_results_2, scale="adjr2")
+```
+
+Plotting out the results of regsubsets_2 and subsets_results_2 shows similar plots to the first, as the adjusted r-squared value generally goes up with the number of parameters. The duplicate values at the same number of parameters indicate that we are showing the best 2 different combinations of parameters at that # of parameters. Like the last plots, we can see that the adjusted r-squared value goes up as we add additional parameters, reaching its maximum of ~0.70 once we have added all 6 parameters (not including the intercept). This suggests that, despite the high collinearity revealed from our analysis in part 7, the best combination of (numerical) parameters, in terms of achieving the lowest r-squared value, is all of them.
