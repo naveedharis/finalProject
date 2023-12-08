@@ -205,11 +205,15 @@ The car corresponding to index 1036 has the largest leverage point of 0.337. Upo
 
 ## Checking for Outlier Points in y
 
-To check for outlier's in y we can use the residuals vs fitted value plot, but since we already used this plot above and commented slightly on the possibility of outliers using the Bonferroni correction to establish the points themselves is a better way.
+To check for outlier's in y we can use the residuals vs fitted value plot, but since we already used this plot above lets use jackknife residuals of our model, and test that for H_0: No outliers.
 
 ```{r, echo = FALSE}
-### NOTE: JACK WAS NOT ABLE TO GET THIS TO WORK SUCCESSFULLY CAN SOMEONE ELSE TRY?
+jackknife_residuals <- rstudent(full_model)
+jackknife_residuals[which.max(abs(jackknife_residuals))]
+qt(.05/(2248*2), 2240)
 ```
+
+The largest residual identified had a value of 13.2 which is way larger than our critical value of 4.25, so we reject the null hypothesis that none of our responses are outlying, and conclude that at least one of the used car sale prices is an outlier in the dataset. Since it is so high above the critical value it is likely that we have more than 1 outlier but that is not something we would be able to tell from here.
 
 ## Checking for Influential Points
 
