@@ -357,21 +357,73 @@ shapiro.test(resid(full_model_transformed))
 
 When we reperform the S-W test, we once again receive an extremely low p-value, indicating that we should conclude that our data is still not normally distributed.
 
-# Exploring Serial Correlation in the Errors
+# 5
+## Exploring Serial Correlation in the Errors
+```{r, echo=True}
+install.packages("lmtest")
+library(lmtest)
 
+
+serialModel = lm(Price~ . - Body_Type, data=data_2)
+dwtest(serialModel)
+```
+DW statistic is quite close to 2, suggesting minimal autocorrelation, the significant p-value indicates there is some evidence of positive autocorrelation in the model's residuals. This could mean that consecutive residuals are not completely independent of each other. 
+
+
+## Applying a generalized least squares estimator 
 ```{r, echo = FALSE}
 library(nlme)
-nlme <- gls(Price~ . - Body_Type, correlation=corARMA(p=1), data=data_2)
-summary(nlme)
+generalModel <- gls(Price~ . - Body_Type, correlation=corARMA(p=1), data=data_2)
+summary(generalModel)
 ```
 
 We see that the estimated value of rho is 0.07. To check if this is significant, we then compute its confidence interval:
 
-```{r, echo = FALSE}
-intervals(nlme)
-```
 
-Becasue 0 is not contained in the confidence interval for rho, there is evidence of serial correlation of the errors
+# 6
+## Explore the possibility that the variance of the errors depend linearly on a specific predictor variable.
+For this exploration, the predictor variable will be mileage
+```{r, echo=TRUE}
+library(ggplot2)
+model <- lm(Price ~ Mileage, data=data_2)
+residuals <- resid(model)
+ggplot(data_2, aes(x = Mileage, y = residuals)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red")
+```
+The spread of residuals indicates that the linear model might not be capturing all the variability in the data, particularly for cars with higher mileage. This could suggest that a simple linear model may not be the best fit for this data and that a more complex model or transformation of variables might be needed. Additionally, the plot suggests that further investigation into the causes of this pattern is warranted, which might include considering non-linear effects, interaction effects, or other forms of variance-stabilizing transformations. Weighted least squares or other forms of modeling that account for the heteroscedastic nature of the data might be more appropriate here. In the presence of heteroscedasticity, the standard errors of the coefficient estimates can be inefficient, and hypothesis tests (like the t-test for coefficients) can be unreliable.
+
+```{r, echo=True}
+bin_width <- 10000
+max_mileage <- max(data_2$Mileage)
+bins <- seq(0, max_mileage, by = bin_width)
+binned_data <- cut(data_2$Mileage, breaks = bins, include.lowest = TRUE, right = FALSE)
+variance_data <- tapply(residuals, binned_data, var)
+
+# Create the plot
+bin_centers <- bins[-length(bins)] + bin_width / 2
+df_plot <- data.frame(Mileage = bin_centers, Variance = variance_data)
+ggplot(df_plot, aes(x = Mileage, y = Variance)) +
+  geom_line() +
+  xlab("Mileage") +
+  ylab("Variance of Residuals") +
+  ggtitle("Variance of Residuals vs Mileage") + 
+  scale_x_continuous(labels = scales::comma) + # Format x-axis labels
+  scale_y_continuous(labels = scales::comma) 
+```
+The plot has peaks and valleys, indicating that the variance of residuals is not constant across different mileage values. In some mileage ranges, the variance is higher, whereas it's lower in others. Aside from the sharp peak, there seems to be a general decreasing trend in variance with increasing mileage up to a certain point, after which it levels off and possibly starts increasing again. This could imply that the relationship between car price and mileage is not uniform across all mileage levels and that the variance in pricing becomes more consistent in the middle mileage range before possibly increasing again.The non-constant variance across mileage values is indicative of heteroscedasticity. Ideally, for homoscedasticity, we would expect to see a more or less flat line, indicating that the variance of residuals is the same across all levels of mileage.
+
+## Apply weighted least-squares estimation with predictor variable
+```{r, echo=True}
+weights <- 1 / (residuals^2)
+
+# Fit weighted least squares model
+wls_model <- lm(Price ~ Mileage, data = data_2, weights = weights)
+
+# Summary of the WLS model
+summary(wls_model)
+```
+The WLS model fits the data well, with significant coefficients and a high R-squared value.
 
 # 7. Assess potential multicollinearity as in Topic 16
 
