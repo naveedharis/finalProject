@@ -476,7 +476,7 @@ Calling vif() on the design matrix (without the first column) indicates the vari
 We can use the leaps library to access the leaps() and regsubsets() functions, which we will need to apply an exaustive model selection search.
 
 ```{r}
-#install.packages('leaps')
+install.packages('leaps')
 library(leaps)
 ```
 
@@ -505,13 +505,13 @@ Under normal circumstances, the line below, that calls for leaps() on our data t
 Fortunately, there are other methods that we can use to apply an exhaustive model selection search to our data. This comes in the form of the leaps library's regsubsets() function. We will use it to determine a ranking of the models based on the adjusted r-squared value.
 
 ```{r}
-subsets_results_1<-regsubsets(Price~Mileage+Registration_Year+Previous_Owners+Engine+Doors+Seats, data=data, nbest=1, method="exhaustive")
+subsets_results_1 <- regsubsets(Price~Mileage+Registration_Year+Previous_Owners+Engine+Doors+Seats, data=data, nbest=1, method="exhaustive")
 ```
 
 Here, we establish subsets_results_1 as a result of regsubsets() on our data, adding the best parameter 1 at a time until we are using all 6 parameter for a total of 6 models. Note that we have removed the Body_Type parameter from the input of our regsubsets(), as the function splits up catagorical variables so that each response becomes its own parameter with a value of "1" or "0", as regsubsets() is built for numerical parameters.
 
 ```{r}
-regsubsets_1<-summary(subsets_results_1)
+regsubsets_1 <- summary(subsets_results_1)
 regsubsets_1
 ```
 
