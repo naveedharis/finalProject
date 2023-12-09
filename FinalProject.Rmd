@@ -361,7 +361,7 @@ When we reperform the S-W test, we once again receive an extremely low p-value, 
 
 ## Exploring Serial Correlation in the Errors
 
-```{r, echo=True}
+```{r, echo=TRUE}
 install.packages("lmtest")
 library(lmtest)
 
@@ -389,7 +389,7 @@ We see that the estimated value of rho is 0.07. To check if this is significant,
 For this exploration, the predictor variable will be mileage
 
 ```{r, echo=TRUE}
-#install.packages('ggplot2')
+install.packages('ggplot2')
 library(ggplot2)
 model <- lm(Price ~ Mileage, data=data_2)
 residuals <- resid(model)
@@ -400,7 +400,7 @@ ggplot(data_2, aes(x = Mileage, y = residuals)) +
 
 The spread of residuals indicates that the linear model might not be capturing all the variability in the data, particularly for cars with higher mileage. This could suggest that a simple linear model may not be the best fit for this data and that a more complex model or transformation of variables might be needed. Additionally, the plot suggests that further investigation into the causes of this pattern is warranted, which might include considering non-linear effects, interaction effects, or other forms of variance-stabilizing transformations. Weighted least squares or other forms of modeling that account for the heteroscedastic nature of the data might be more appropriate here. In the presence of heteroscedasticity, the standard errors of the coefficient estimates can be inefficient, and hypothesis tests (like the t-test for coefficients) can be unreliable.
 
-```{r, echo=True}
+```{r, echo=TRUE}
 bin_width <- 10000
 max_mileage <- max(data_2$Mileage)
 bins <- seq(0, max_mileage, by = bin_width)
@@ -423,7 +423,7 @@ The plot has peaks and valleys, indicating that the variance of residuals is not
 
 ## Apply weighted least-squares estimation with predictor variable
 
-```{r, echo=True}
+```{r, echo=TRUE}
 weights <- 1 / (residuals^2)
 
 # Fit weighted least squares model
@@ -473,7 +473,7 @@ Calling vif() on the design matrix (without the first column) indicates the vari
 
 # 8. If possible, apply an exhaustive model selection search as in Topic 17 using the different selection criteria we covered in class
 
-We can use the leaps library to access the leaps() and regsubsets() functions, which we will need to apply an exaustive model selection search.
+We can use the leaps library to access the leaps() and regsubsets() functions, which we will need to apply an exhaustive model selection search.
 
 ```{r}
 install.packages('leaps')
@@ -547,3 +547,148 @@ plot(subsets_results_2, scale="adjr2")
 ```
 
 Plotting out the results of regsubsets_2 and subsets_results_2 shows similar plots to the first, as the adjusted r-squared value generally goes up with the number of parameters. The duplicate values at the same number of parameters indicate that we are showing the best 2 different combinations of parameters at that \# of parameters. Like the last plots, we can see that the adjusted r-squared value goes up as we add additional parameters, reaching its maximum of \~0.70 once we have added all 6 parameters (not including the intercept). This suggests that, despite the high collinearity revealed from our analysis in part 7, the best combination of (numerical) parameters, in terms of achieving the lowest r-squared value, is all of them.
+
+# 9. Apply backward and forward model selections as described in Topic 18.
+
+We can apply the built in function "step()" to apply forward selection to our full model. One should note that the step function utilizes AIC for selection criteria. As our full model after the box-cox transformation outperformed our standard full model, we will be applying forward selection to our transformed model. 
+
+```{r, echo = FALSE}
+forwad_selected_model = step(full_model_transformed, direction = 'forward')
+summary(forwad_selected_model)
+```
+
+Applying forward selection to our transformed full model results in our model retaining the same predictors as the full model. As the step function utilizes a stopping criteria based on AIC, we retain predictors with large p-values such as the "Doors" predictor. To enforce our own stopping criteria based on p-values rather than AIC, we can utilize the update() function to manually add one feature at a time inside of a loop that only adds predictors to our model if their addition results in a model with all p-values < .05. The predictors will be added to the model in order of "best to worst", where this order has been determined earlier by regsubsets.
+
+```{r, echo = FALSE}
+forward_selected_model_pval = lm(Price^(1/6) ~ 1, data = data_2)
+set_of_candidate_vars = c("Registration_Year", "Engine", "Mileage", "Previous_Owners", "Seats", "Doors")
+while (TRUE) {
+  best_p_value = 1
+  for (candidate_var in set_of_candidate_vars) {
+    temp_formula = update(formula(forward_selected_model_pval), paste(". ~ . +", candidate_var))
+    temp_model = lm(temp_formula, data = data_2)
+    existing_p_values = summary(temp_model)$coef[, "Pr(>|t|)"]
+    max_p_value = max(existing_p_values[-1], na.rm = TRUE)
+    if (max_p_value < best_p_value) {
+      best_p_value = max_p_value
+      add_variable = candidate_var
+    }
+  }
+  if (best_p_value < 0.05) {
+    forward_selected_model_pval = update(forward_selected_model_pval, paste(". ~ . +", add_variable))
+    set_of_candidate_vars = set_of_candidate_vars[set_of_candidate_vars != add_variable]
+  } else {
+    break
+  }
+}
+summary(forward_selected_model_pval)
+```
+
+This second attempt at forward selection based on p-values resulted in a model that removes the "Doors" predictor. This new model maintains the same R-squared value as the full model but with one less predictor, leading to a marginally improved adjusted R-squared value. As forward and backward selection don't necessarily result in the same feature selection, we can apply backward selection to see if the results vary. 
+
+```{r, echo = FALSE}
+backward_selected_model = step(full_model_transformed, direction = 'backward')
+summary(backward_selected_model)
+```
+
+The backward selected model results in different feature selection when compared to the forward selected model with AIC stopping criteria, but does result in the same model as the forward selected model utilizing a p-value based stopping criteria. While a marginal improvement, these results suggest that the "Doors" predictor should be removed from our final model to avoid adding unnecessary complexity to our model. 
+
+#10. Redo the model diagnostics in item 3 for one of the reduced model selected in item 9.
+
+We will do the following analysis on the backward selected model.
+
+## Checking constant variance assumption
+
+We can utilize Residuals vs Fitted Values and the R-Student Residuals vs Fitted Values plots to check for homoscedasticity of our new model.
+
+```{r, echo = FALSE}
+par(mfrow = c(1, 2))
+fitted_values = fitted(backward_selected_model)
+residuals = resid(backward_selected_model)
+Resid_Plot = plot(fitted_values, residuals, main = "Residuals vs Fitted Values", xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0)
+Rstudent_residuals = rstudent(backward_selected_model)
+RstudentResid_Plot = plot(fitted_values, Rstudent_residuals, main = "R-student Residuals vs Fitted Values", xlab = "Fitted Values", ylab = "R-student Residuals")
+abline(h = 0)
+```
+
+Analyzing the above plots of Residuals vs Fitted Values and the R-Student Residuals vs Fitted Values, we can note a significant difference when compared to the same plots called in item 3) of this report. In the plots from item 3) there was a clear shape in the form of a crescent in the lower right quadrant of our plots, suggesting our model could be heteroscedastic or nonlinear. Our new plots are largely centered around y=0 and don't show any clear shapes or patterns. While the data seems to have a relatively even spread across fitted values, this somewhat breaks down at the largest fitted values, where there is a slightly smaller spread than the rest of the plot. This suggests that our homoscedasticity assumption is likely valid for the majority of our data set, but might break down for the most expensive cars. 
+
+## Checking Normality using QQ-Plots and Test
+
+We can utilize qq plots to analyze the validity of our normality assumption.
+
+```{r, echo = FALSE}
+qqnorm(residuals)
+qqline(residuals)
+```
+
+Under our normality assumption we would expect a qq-plot of the residuals to follow a linear relation. While the majority of points in the middle of our qq-plot follow a linear relation, the overall "S" shape of our plot suggests our normality assumption may not be valid. The fact that that the left tail is particularly heavy suggests that our normality assumption is likely not valid for the lowest priced cars. For a more quantitative analysis, we can employ a Shapiro-Wilk normality test:
+
+```{r, echo = FALSE}
+shapiro.test(residuals)
+```
+Under normality we expect a large p-value, leading to the conclusion that our residuals fail the normality test. Given the heavy tail of our qq-plot, we might see better (more likely normal) results by removing the cheapest cars in our data set. 
+
+## Checking for High Leverage Points
+
+We can check the leverage using the hatvalues function.
+
+```{r, echo = FALSE}
+leverage_values = hatvalues(backward_selected_model)
+plot(leverage_values, main = "Leverage Values", xlab = "Observation", ylab = "Leverage")
+```
+
+From inspection of the above plot we can determine there are a number of high leverage points. By considering points with more than twice the mean leverage as high leverage points, we can quantify exactly how many points are high leverage. 
+
+```{r, echo = FALSE}
+high_leverage_points = which(leverage_values > 2 * mean(leverage_values))
+length(high_leverage_points)
+```
+This large number of high leverage points suggests a small portion of our data (~10%) may be highly influencing the overall behavior of the model. We can refit our working model with data excluding the high leverage points, but it is important to note that it might be dangerous to remove such a significant portion of our data set due to information loss and data integrity considerations.
+
+
+```{r}
+backward_selected_model_filtered_leverage  = lm(Price^(1/6) ~ . -Body_Type -Doors, data = data_2[-high_leverage_points, ])
+summary(backward_selected_model_filtered_leverage)
+```
+This resulted in an improvement of our R-squared and adjusted R-squared values and interestingly reduced the determined statistical significance of the "Seats" predictor. 
+
+## Checking for Outlier Points in Price
+
+To check for outlier's in y we can use the residuals vs fitted value plot, but since we already used this plot above we can use jackknife residuals of our model to test H_0: No outliers. We will do this test first on our original backward selected model, and then on the backward selected model with the high leverage points filtered out. 
+
+```{r, echo = FALSE}
+jackknife_residuals <- rstudent(backward_selected_model)
+jackknife_residuals[which.max(abs(jackknife_residuals))]
+qt(.05/(2248*2), 2240)
+jackknife_residuals_filtered <- rstudent(backward_selected_model_filtered_leverage)
+jackknife_residuals_filtered[which.max(abs(jackknife_residuals_filtered))]
+qt(.05/(2248*2), 2240)
+```
+The results of the jackknife residuals of the original backward selected model suggest that we should reject H0 and conclude that at least one value in our data set is an outlier. The maximum jackknife residual of the backward selected model with high leverage points removed is less than the critical value, leading to the conclusion that we fail to reject H0. This makes sense as high leverage points are often associated with outliers.
+
+Returning to just our original backward selected model, we can visualize the outliers in the non-filtered data set via a plot of Jackknife Residuals vs Fitted Values:
+
+```{r, echo = FALSE}
+plot(fitted_values, jackknife_residuals, main = "Jackknife Residuals vs Fitted Values", 
+     xlab = "Fitted Values", ylab = "Jackknife Residuals")
+abline(h = 0, col = "red", lty = 2)
+text(fitted_values[abs(jackknife_residuals) > 4.25], 
+     jackknife_residuals[abs(jackknife_residuals) > 4.25], 
+     labels = which(abs(jackknife_residuals) > 4.25), col = "blue")
+legend("topright", legend = c("Outliers"), col = c("blue"), pch = 1)
+```
+Here we can identify an outlier in the point at index 1526, suggesting it might be worth removing from future models.
+
+## Checking for Influential Points
+
+We can again apply Cook's Distance to check for influential points, as it determines how much the fitted values change when the ith data point is removed. 
+
+```{r, echo = FALSE}
+cook_backward = cooks.distance(backward_selected_model)
+plot(cook_backward, ylab="Cook's Distance", main="Cook's Distance", type="l")
+cook_backward[which.max(cook_backward)]
+```
+
+We can identify the index of the maximum Cook's distance point as 1531, suggesting it might be worth removing from any future models.
