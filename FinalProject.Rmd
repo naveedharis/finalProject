@@ -370,6 +370,7 @@ serialModel = lm(Price~ . - Body_Type, data=data_2)
 dwtest(serialModel)
 ```
 
+Serial correlation is the relationship between a given variable and a lagged version of itself over various time intervals. It measures the relationship between a variable's current value given its past values. A variable that is serially correlated indicates that it may not be random.
 DW statistic is quite close to 2, suggesting minimal autocorrelation, the significant p-value indicates there is some evidence of positive autocorrelation in the model's residuals. This could mean that consecutive residuals are not completely independent of each other.
 
 ## Applying a generalized least squares estimator
@@ -424,16 +425,91 @@ The plot has peaks and valleys, indicating that the variance of residuals is not
 ## Apply weighted least-squares estimation with predictor variable
 
 ```{r, echo=TRUE}
-weights <- 1 / (residuals^2)
+plot(data_2$Mileage, data_2$Price, main="Price vs. Mileage",
+     xlab="Mileage", ylab="Price", pch=19)
 
-# Fit weighted least squares model
-wls_model <- lm(Price ~ Mileage, data = data_2, weights = weights)
+abline(model, col="red")
 
-# Summary of the WLS model
-summary(wls_model)
 ```
 
-The WLS model fits the data well, with significant coefficients and a high R-squared value.
+```{r, echo=TRUE}
+par(mfrow=c(2,3))
+plot(model, which=1:6)
+```
+Residuals vs Fitted Values: It is biased and heteroscedastic. 
+
+Q-Q Residuals: The points generally follow the line of identity but with some deviations, especially in the tails. This suggests that the residuals are approximately normal but with potential outliers or heavy tails, indicating more extreme values than would be expected for a normal distribution. This could mean that the underlying assumptions of normality for statistical tests or models might not be fully met.
+
+
+```{r, echo=TRUE}
+# iteration 0
+weight0 = rep(1, length(data_2$Mileage))
+model.w1 = lm(Price ~ Mileage, data=data_2)
+
+# iteration 1
+resid.w1 = model.w1$resid # OLS
+sd.w1 = lm(abs(resid.w1) ~ Mileage, data = data_2) # IRLS
+weight1 = (1/sd.w1$fitted)^2
+model.w2 = lm(Price ~ Mileage, data = data_2, weights=weight1) # WLS
+
+# iteration 2
+resid.w2 = model.w2$resid
+sd.w2 = lm(abs(resid.w2) ~ Mileage, data = data_2)
+weight2 = (1/sd.w2$fitted)^2
+model.w3 = lm(Price ~ Mileage, data = data_2, weights=weight2)
+
+```
+
+
+```{r, echo=TRUE}
+par(mfrow=c(1,2))
+
+# Plot for Iteration 1
+plot(data_2$Mileage, data_2$Price, main="Iteration 1", xlab="Mileage", ylab="Price", pch=19, col='grey')
+abline(model.w1, col='green')
+abline(sd.w1, col='blue')
+abline(model.w2, col="red") 
+
+legend("topright",            
+       legend = c("True Line", "IRLS 1", "WLS"),  # Legend labels
+       col = c("green", "blue", "red"),           # Colors
+       lty = c(1, 1, 1),                          # Line types
+       cex = 0.8)
+
+# Plot for Iteration 2
+plot(data_2$Mileage, data_2$Price, main="Iteration 2", xlab="Mileage", ylab="Price", pch=19, col='grey')
+abline(model.w1, col='green')
+abline(sd.w2, col='blue')
+abline(model.w2, col="red")
+abline(model.w3, col="purple")
+legend("topright",            
+       legend = c("True Line", "IRLS 1", "WLS", "IRLS 2"),  # Legend labels
+       col = c("green", "blue", "red", "purple"),           # Colors
+       lty = c(1, 1, 1, 1),                          # Line types
+       cex = 0.8)
+
+```
+The IRLS 1 line is quite close to the true line, although it appears to underestimate the price at lower mileage and overestimate it at higher mileage compared to the true line. Since this is only the first iteration, further iterations could potentially bring the IRLS line closer to the true line. The WLS line deviates more from the true line than the IRLS line, especially at the higher mileage end of the plot. This could suggest that the initial weights assigned in the WLS method are not optimal or that the model does not account for all the variabilities in the data.
+
+Comparing the IRLS 1 and IRLS 2 lines, we can evaluate how the IRLS algorithm is adjusting with each iteration. Typically, with more iterations, the IRLS method would refine its estimates, getting closer to the true line as it minimizes the influence of outliers or leverages the structure in the data.
+
+```{r, echo=TRUE}
+par(mfrow=c(2,2))
+plot(fitted(model.w2), resid(model.w2))
+plot(sqrt(weight1) * fitted(model.w2), sqrt(weight1) * resid(model.w2))
+
+plot(fitted(model.w3), resid(model.w3))
+plot(sqrt(weight2) * fitted(model.w3), sqrt(weight2) * resid(model.w3))
+
+```
+The first plot of model.w2 shows a clear pattern where residuals fan out as the fitted values increase. This suggests the presence of heteroscedasticity, meaning that the variance of the residuals is not constant across all levels of the fitted values. There are some large residuals (both positive and negative) especially at the higher end of the fitted values. This indicates that the model may not be capturing all the explanatory information, and there may be outliers or leverage points that the model isn’t handling well.
+
+The second plot of model.w2 shows that the data points are clustered near the vertical axis, indicating most fitted values are low when weighted by the square root of the weights in the first iteration. There is a single outlier far to the right, suggesting there is at least one observation with a much higher fitted value when adjusted by its weight.
+
+In the first plot of model.w3, there seems to be a funnel shape, with the residuals spreading out as the fitted values increase, which suggests heteroscedasticity. The funnel shape in this plot indicates that the model might benefit from a transformation of the response variable or the use of a different modeling approach that accounts for the changing variance.
+
+In the second plot of model.w3, most data points are clustered around the lower end of the transformed fitted values, with a few points standing out. This could suggest that the model fits well for a range of the data but may not capture some points effectively.
+
 
 # 7. Assess potential multicollinearity as in Topic 16
 
