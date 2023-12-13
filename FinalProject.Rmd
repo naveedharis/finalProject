@@ -511,6 +511,53 @@ In the first plot of model.w3, there seems to be a funnel shape, with the residu
 In the second plot of model.w3, most data points are clustered around the lower end of the transformed fitted values, with a few points standing out. This could suggest that the model fits well for a range of the data but may not capture some points effectively.
 
 
+```{r, echo=TRUE}
+
+tolerance = 1e-6
+
+weights = rep(1, length(data_2$Mileage))
+
+converged = FALSE
+iteration = 0
+max_iterations = 100 
+
+while(!converged && iteration < max_iterations) {
+  iteration = iteration + 1
+  
+  model = lm(Price ~ Mileage, data=data_2, weights=weights)
+  
+  resid = model$resid
+  sd_model = lm(abs(resid) ~ Mileage, data=data_2)
+  new_weights = (1/sd_model$fitted)^2
+  
+  if (max(abs(new_weights - weights)) < tolerance) {
+    converged = TRUE
+  }
+  
+  weights = new_weights
+}
+
+model_final = model
+
+cat("Converged in", iteration, "iterations\n")
+```
+
+```{r, echo=TRUE}
+plot(data_2$Mileage, data_2$Price, main="Iteration 18", xlab="Mileage", ylab="Price", pch=19, col='grey')
+abline(model.w1, col='green')
+abline(sd_model, col='blue')
+abline(model_final, col="red") 
+```
+```{r, echo=TRUE}
+par(mfrow=c(1,2))
+plot(fitted(model_final), resid(model_final))
+plot(sqrt(weights) * fitted(model_final), sqrt(weights) * resid(model_final))
+```
+
+In the first plot of model after 18 iterations, there seems to be a funnel shape, with the residuals spreading out as the fitted values increase, which suggests heteroscedasticity. The funnel shape in this plot indicates that the model might benefit from a transformation of the response variable or the use of a different modeling approach that accounts for the changing variance.
+
+In the second plot of model after 18 iterations, most data points are clustered around the lower end of the transformed fitted values, with a few points standing out. This could suggest that the model fits well for a range of the data but may not capture some points effectively. 
+
 # 7. Assess potential multicollinearity as in Topic 16
 
 In order to assess multicollinearity between the predictors, we must create a list of the eigenvalues. First, we establish the design matrix of the model, and remove the first column (the intercept). Then, we call eigen(Xstar'\*Xstar) to get a list of the eigenvalues of the matrix.
