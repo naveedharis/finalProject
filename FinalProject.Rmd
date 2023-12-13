@@ -784,10 +784,10 @@ To check for outlier's in y we can use the residuals vs fitted value plot, but s
 ```{r, echo = FALSE}
 jackknife_residuals <- rstudent(backward_selected_model)
 jackknife_residuals[which.max(abs(jackknife_residuals))]
-qt(.05/(2248*2), 2240)
+qt(.05/(2239*2), 2231)
 jackknife_residuals_filtered <- rstudent(backward_selected_model_filtered_leverage)
 jackknife_residuals_filtered[which.max(abs(jackknife_residuals_filtered))]
-qt(.05/(2248*2), 2240)
+qt(.05/(2025*2), 2017)
 ```
 The results of the jackknife residuals of the original backward selected model suggest that we should reject H0 and conclude that at least one value in our data set is an outlier. The maximum jackknife residual of the backward selected model with high leverage points removed is less than the critical value, leading to the conclusion that we fail to reject H0. This makes sense as high leverage points are often associated with outliers.
 
